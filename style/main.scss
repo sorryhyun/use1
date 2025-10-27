@@ -547,3 +547,360 @@ hr {
     }
   }
 }
+
+// ============================================
+// Notification Sidebar Styles (WITH BUGS)
+// ============================================
+
+// BUG #1: Z-index too low - will be covered by game elements
+.notification-sidebar {
+  position: fixed;
+  top: 0;
+  right: -350px; // BUG #2: Hidden off-screen initially but transition won't work properly
+  width: 320px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 50; // Should be higher like 1000
+  transition: right 0.3s ease;
+  overflow-y: auto;
+
+  // BUG #3: Missing scrollbar styling - ugly scrollbars
+
+  &.open {
+    right: 0;
+    // BUG #4: No overlay to prevent interaction with content behind
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: $game-container-background;
+    color: white;
+    position: sticky;
+    top: 0;
+    // BUG #5: Missing z-index - tabs might overlap header when scrolling
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      // BUG #6: No text truncation if title is too long
+      white-space: nowrap;
+    }
+
+    .close-sidebar {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 32px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+
+      // BUG #7: No hover state for better UX
+      // BUG #8: No focus outline for accessibility
+      outline: none;
+    }
+  }
+
+  .sidebar-tabs {
+    display: flex;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    // BUG #9: Not sticky - will scroll away
+
+    .tab-button {
+      flex: 1;
+      padding: 15px 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: $text-color;
+      transition: background 0.2s;
+      // BUG #10: Text wraps awkwardly on small screens
+
+      &:hover {
+        background: #e0e0e0;
+      }
+
+      &.active {
+        background: white;
+        // BUG #11: No visual indicator like border-bottom
+        font-weight: bold;
+      }
+
+      // BUG #12: No focus styles for keyboard navigation
+    }
+  }
+
+  .tab-content {
+    display: none; // BUG #13: Should use visibility or opacity for better transitions
+    padding: 20px;
+
+    &.active {
+      display: block;
+    }
+  }
+}
+
+// Notifications List Styles
+.notifications-list {
+  margin-bottom: 20px;
+  // BUG #14: No max-height, could overflow parent
+
+  .notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background: #f9f9f9;
+    border-left: 4px solid #ccc;
+    // BUG #15: No transition when appearing/disappearing
+
+    &.info {
+      border-left-color: #2196F3;
+    }
+
+    &.success {
+      border-left-color: #4CAF50;
+    }
+
+    &.achievement {
+      border-left-color: #FF9800;
+      background: #fff3e0; // BUG #16: Low contrast, hard to read
+    }
+
+    .notification-content {
+      flex: 1;
+
+      p {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        // BUG #17: No word-break, long words will overflow
+      }
+
+      .notification-time {
+        font-size: 12px;
+        color: #999;
+        // BUG #18: Time format not padded (9:5 instead of 09:05)
+      }
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
+      padding: 5px;
+      // BUG #19: Click area too small for mobile
+
+      &:hover {
+        color: #333;
+      }
+    }
+  }
+}
+
+.clear-all-btn {
+  width: 100%;
+  padding: 12px;
+  background: darken($game-container-background, 20%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  // BUG #20: No disabled state when there are no notifications
+
+  &:hover {
+    background: darken($game-container-background, 25%);
+  }
+}
+
+// Statistics Styles
+.stats-container {
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-weight: bold;
+      color: $text-color;
+    }
+
+    .stat-value {
+      color: $game-container-background;
+      font-weight: bold;
+      font-size: 18px;
+      // BUG #21: No animation when values change
+    }
+  }
+}
+
+// Achievements Styles
+.achievements-list {
+  .achievement-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    transition: all 0.3s;
+
+    &.locked {
+      opacity: 0.5;
+      // BUG #22: Grayscale filter missing vendor prefixes
+      filter: grayscale(100%);
+    }
+
+    &.unlocked {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      // BUG #23: Animation plays every time, not just on unlock
+      animation: achievement-unlock 0.5s ease;
+
+      .achievement-info p {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+
+    .achievement-icon {
+      font-size: 40px;
+      margin-right: 15px;
+      // BUG #24: No min-width, can shrink on long text
+    }
+
+    .achievement-info {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        // BUG #25: No text truncation
+      }
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: #666;
+      }
+    }
+  }
+}
+
+// BUG #26: Missing keyframes definition for achievement-unlock animation
+@keyframes achievement-unlock {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+// Sidebar Toggle Button
+.sidebar-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: $game-container-background;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  // BUG #27: Z-index too low, can be covered by other elements
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+
+  // BUG #28: No active state feedback
+
+  &:hover {
+    background: darken($game-container-background, 10%);
+    transform: scale(1.1);
+  }
+
+  .toggle-icon {
+    color: white;
+    font-size: 24px;
+    // BUG #29: Icon doesn't rotate when sidebar is open
+  }
+}
+
+// Mobile Responsive Styles (WITH BUGS)
+@include smaller($mobile-threshold) {
+  .notification-sidebar {
+    // BUG #30: Width is fixed, doesn't account for small screens
+    width: 320px; // Should be 100% or calc(100% - 20px)
+    right: -320px;
+
+    // BUG #31: Sidebar covers entire screen but no way to close on mobile
+    // except the X button which is hard to reach
+  }
+
+  .sidebar-toggle {
+    // BUG #32: Button overlaps with score container on mobile
+    top: 10px;
+    right: 10px;
+    width: 45px;
+    height: 45px;
+
+    .toggle-icon {
+      font-size: 20px;
+    }
+  }
+
+  .sidebar-tabs {
+    .tab-button {
+      padding: 12px 5px;
+      font-size: 12px;
+      // BUG #33: Text gets cut off on very small screens
+    }
+  }
+
+  .achievement-item {
+    // BUG #34: Icon too large on mobile, causes layout issues
+    .achievement-icon {
+      font-size: 35px;
+      margin-right: 10px;
+    }
+
+    .achievement-info {
+      h3 {
+        font-size: 14px;
+      }
+
+      p {
+        font-size: 11px;
+      }
+    }
+  }
+
+  // BUG #35: Stats container not optimized for mobile
+  .stats-container {
+    .stat-item {
+      padding: 12px 0;
+    }
+  }
+}
+
+// BUG #36: Missing media query for very large screens
+// Sidebar looks out of place on large monitors
+
+// BUG #37: No dark mode support
+// BUG #38: Missing print styles - sidebar will print
+// BUG #39: No RTL language support
+// BUG #40: Missing reduced-motion media query for accessibility

@@ -19,6 +19,16 @@ GameManager.prototype.restart = function () {
   this.storageManager.setBestScore(0);
   this.actuator.continueGame(); // Clear the game won/lost message
   this.setup();
+
+  // BUG: notificationManager might not exist yet
+  if (window.notificationManager) {
+    window.notificationManager.addNotification('Game restarted!', 'info');
+    // BUG: updateStatistics should only be called on game end, not restart
+    window.notificationManager.updateStatistics({
+      score: this.score,
+      won: false
+    });
+  }
 };
 
 // Keep playing after winning (allows going over 2048)
@@ -69,6 +79,7 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
+    // BUG: Probability is wrong - should be 0.9 for 2, not 0.1
     var value = Math.random() < 0.1 ? 2 : 4;
     var tile = new Tile(this.grid.randomAvailableCell(), value);
 
@@ -167,8 +178,14 @@ GameManager.prototype.move = function (direction) {
           // Update the score
           self.score += merged.value / 2;
 
-          // The mighty 2048 tile
+          // BUG: Wrong tile value check - should be 2048, not 1024
           if (merged.value === 1024) self.won = true;
+
+          // Track tile creation for notifications
+          // BUG: Called too frequently, causes notification spam
+          if (window.notificationManager) {
+            window.notificationManager.trackTileCreation(merged.value);
+          }
         } else {
           self.moveTile(tile, positions.farthest);
         }
@@ -185,6 +202,30 @@ GameManager.prototype.move = function (direction) {
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
+
+      // BUG: notificationManager might not be defined
+      if (window.notificationManager) {
+        window.notificationManager.addNotification('Game Over! Final score: ' + this.score, 'info');
+        window.notificationManager.updateStatistics({
+          score: this.score,
+          won: false
+        });
+      }
+    }
+
+    // BUG: Notification shown every move, not just when won
+    if (this.won && window.notificationManager) {
+      window.notificationManager.addNotification('You won! You reached 1024!', 'success');
+      window.notificationManager.updateStatistics({
+        score: this.score,
+        won: true
+      });
+    }
+
+    // Track move
+    // BUG: Direction parameter not passed correctly
+    if (window.notificationManager) {
+      window.notificationManager.trackMove(direction);
     }
 
     this.actuate();
