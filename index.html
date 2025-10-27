@@ -85,6 +85,97 @@
     </p>
   </div>
 
+  <!-- Mobile Menu Toggle -->
+  <button class="sidebar-toggle" id="sidebarToggle">
+    <span class="toggle-icon">☰</span>
+  </button>
+
+  <!-- Notification Sidebar -->
+  <div class="notification-sidebar" id="notificationSidebar">
+    <div class="sidebar-header">
+      <h2>Notifications</h2>
+      <button class="close-sidebar" id="closeSidebar">×</button>
+    </div>
+
+    <div class="sidebar-tabs">
+      <button class="tab-button active" data-tab="notifications">Notifications</button>
+      <button class="tab-button" data-tab="stats">Statistics</button>
+      <button class="tab-button" data-tab="achievements">Achievements</button>
+    </div>
+
+    <div class="tab-content active" id="notifications-tab">
+      <div class="notifications-list">
+        <!-- Notifications will be added here dynamically -->
+      </div>
+      <button class="clear-all-btn" id="clearAllNotifications">Clear All</button>
+    </div>
+
+    <div class="tab-content" id="stats-tab">
+      <div class="stats-container">
+        <div class="stat-item">
+          <span class="stat-label">Games Played:</span>
+          <span class="stat-value" id="gamesPlayed">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Moves:</span>
+          <span class="stat-value" id="totalMoves">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Highest Tile:</span>
+          <span class="stat-value" id="highestTile">2</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Win Rate:</span>
+          <span class="stat-value" id="winRate">0%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Average Score:</span>
+          <span class="stat-value" id="avgScore">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="achievements-tab">
+      <div class="achievements-list">
+        <div class="achievement-item locked" data-achievement="first-win">
+          <div class="achievement-icon">🏆</div>
+          <div class="achievement-info">
+            <h3>First Victory</h3>
+            <p>Win your first game</p>
+          </div>
+        </div>
+        <div class="achievement-item locked" data-achievement="reach-512">
+          <div class="achievement-icon">🎯</div>
+          <div class="achievement-info">
+            <h3>Halfway There</h3>
+            <p>Reach the 512 tile</p>
+          </div>
+        </div>
+        <div class="achievement-item locked" data-achievement="reach-2048">
+          <div class="achievement-icon">🌟</div>
+          <div class="achievement-info">
+            <h3>Champion</h3>
+            <p>Reach the 2048 tile</p>
+          </div>
+        </div>
+        <div class="achievement-item locked" data-achievement="play-100">
+          <div class="achievement-icon">🎮</div>
+          <div class="achievement-info">
+            <h3>Dedicated Player</h3>
+            <p>Play 100 games</p>
+          </div>
+        </div>
+        <div class="achievement-item locked" data-achievement="high-score">
+          <div class="achievement-icon">💯</div>
+          <div class="achievement-info">
+            <h3>Score Master</h3>
+            <p>Score over 10,000 points</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/bind_polyfill.js"></script>
   <script src="js/classlist_polyfill.js"></script>
   <script src="js/animframe_polyfill.js"></script>
@@ -94,6 +185,7 @@
   <script src="js/tile.js"></script>
   <script src="js/local_storage_manager.js"></script>
   <script src="js/game_manager.js"></script>
+  <script src="js/notification_manager.js"></script>
   <script src="js/application.js"></script>
 </body>
 </html>
