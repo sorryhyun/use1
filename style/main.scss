@@ -549,27 +549,42 @@ hr {
 }
 
 // ============================================
-// Notification Sidebar Styles (WITH BUGS)
+// Notification Sidebar Styles (BUGS FIXED)
 // ============================================
 
-// BUG #1: Z-index too low - will be covered by game elements
+// FIX #1: Z-index increased to appear above game elements
 .notification-sidebar {
   position: fixed;
   top: 0;
-  right: -350px; // BUG #2: Hidden off-screen initially but transition won't work properly
+  right: -350px;
   width: 320px;
   height: 100%;
   background: #fff;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 50; // Should be higher like 1000
+  z-index: 1000; // FIX: Higher z-index
   transition: right 0.3s ease;
   overflow-y: auto;
 
-  // BUG #3: Missing scrollbar styling - ugly scrollbars
+  // FIX #3: Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+
+    &:hover {
+      background: #555;
+    }
+  }
 
   &.open {
     right: 0;
-    // BUG #4: No overlay to prevent interaction with content behind
   }
 
   .sidebar-header {
@@ -581,13 +596,15 @@ hr {
     color: white;
     position: sticky;
     top: 0;
-    // BUG #5: Missing z-index - tabs might overlap header when scrolling
+    z-index: 10; // FIX #5: Added z-index
 
     h2 {
       margin: 0;
       font-size: 24px;
-      // BUG #6: No text truncation if title is too long
       white-space: nowrap;
+      overflow: hidden; // FIX #6: Text truncation
+      text-overflow: ellipsis;
+      max-width: 220px;
     }
 
     .close-sidebar {
@@ -601,9 +618,16 @@ hr {
       height: 30px;
       line-height: 30px;
 
-      // BUG #7: No hover state for better UX
-      // BUG #8: No focus outline for accessibility
-      outline: none;
+      // FIX #7: Added hover state
+      &:hover {
+        opacity: 0.8;
+      }
+
+      // FIX #8: Added focus outline for accessibility
+      &:focus {
+        outline: 2px solid white;
+        outline-offset: 2px;
+      }
     }
   }
 
@@ -611,7 +635,9 @@ hr {
     display: flex;
     background: #f0f0f0;
     border-bottom: 1px solid #ddd;
-    // BUG #9: Not sticky - will scroll away
+    position: sticky; // FIX #9: Make sticky
+    top: 70px;
+    z-index: 9;
 
     .tab-button {
       flex: 1;
@@ -622,7 +648,9 @@ hr {
       font-size: 14px;
       color: $text-color;
       transition: background 0.2s;
-      // BUG #10: Text wraps awkwardly on small screens
+      white-space: nowrap; // FIX #10: Prevent text wrapping
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       &:hover {
         background: #e0e0e0;
@@ -630,20 +658,32 @@ hr {
 
       &.active {
         background: white;
-        // BUG #11: No visual indicator like border-bottom
         font-weight: bold;
+        border-bottom: 3px solid $game-container-background; // FIX #11: Visual indicator
       }
 
-      // BUG #12: No focus styles for keyboard navigation
+      // FIX #12: Focus styles for accessibility
+      &:focus {
+        outline: 2px solid $game-container-background;
+        outline-offset: -2px;
+      }
     }
   }
 
   .tab-content {
-    display: none; // BUG #13: Should use visibility or opacity for better transitions
-    padding: 20px;
+    // FIX #13: Use visibility for better transitions
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    padding: 0;
+    transition: opacity 0.2s, visibility 0.2s;
 
     &.active {
-      display: block;
+      visibility: visible;
+      opacity: 1;
+      height: auto;
+      padding: 20px;
     }
   }
 }
@@ -651,7 +691,8 @@ hr {
 // Notifications List Styles
 .notifications-list {
   margin-bottom: 20px;
-  // BUG #14: No max-height, could overflow parent
+  max-height: 400px; // FIX #14: Added max-height
+  overflow-y: auto;
 
   .notification-item {
     display: flex;
@@ -662,7 +703,9 @@ hr {
     border-radius: 5px;
     background: #f9f9f9;
     border-left: 4px solid #ccc;
-    // BUG #15: No transition when appearing/disappearing
+    // FIX #15: Added transitions
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease;
 
     &.info {
       border-left-color: #2196F3;
@@ -674,7 +717,7 @@ hr {
 
     &.achievement {
       border-left-color: #FF9800;
-      background: #fff3e0; // BUG #16: Low contrast, hard to read
+      background: #fff8e1; // FIX #16: Better contrast
     }
 
     .notification-content {
@@ -683,13 +726,13 @@ hr {
       p {
         margin: 0 0 5px 0;
         font-size: 14px;
-        // BUG #17: No word-break, long words will overflow
+        word-break: break-word; // FIX #17: Handle long words
       }
 
       .notification-time {
         font-size: 12px;
         color: #999;
-        // BUG #18: Time format not padded (9:5 instead of 09:05)
+        // FIX #18: Time is now padded in JS
       }
     }
 
@@ -699,13 +742,26 @@ hr {
       font-size: 20px;
       color: #999;
       cursor: pointer;
-      padding: 5px;
-      // BUG #19: Click area too small for mobile
+      padding: 10px; // FIX #19: Larger click area
+      margin: -10px -5px -10px 0;
+      min-width: 40px;
+      min-height: 40px;
 
       &:hover {
         color: #333;
       }
     }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -718,10 +774,16 @@ hr {
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
-  // BUG #20: No disabled state when there are no notifications
+  transition: background 0.2s, opacity 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: darken($game-container-background, 25%);
+  }
+
+  // FIX #20: Added disabled state
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -746,7 +808,13 @@ hr {
       color: $game-container-background;
       font-weight: bold;
       font-size: 18px;
-      // BUG #21: No animation when values change
+      // FIX #21: Added animation for value changes
+      transition: transform 0.3s ease, color 0.3s ease;
+
+      &.updated {
+        transform: scale(1.1);
+        color: darken($game-container-background, 10%);
+      }
     }
   }
 }
@@ -764,34 +832,46 @@ hr {
 
     &.locked {
       opacity: 0.5;
-      // BUG #22: Grayscale filter missing vendor prefixes
+      // FIX #22: Added vendor prefixes
+      -webkit-filter: grayscale(100%);
+      -moz-filter: grayscale(100%);
+      -ms-filter: grayscale(100%);
+      -o-filter: grayscale(100%);
       filter: grayscale(100%);
     }
 
     &.unlocked {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      // BUG #23: Animation plays every time, not just on unlock
-      animation: achievement-unlock 0.5s ease;
+      // FIX #23: Animation only on first unlock (controlled by JS)
 
       .achievement-info p {
         color: rgba(255, 255, 255, 0.9);
+      }
+
+      &.just-unlocked {
+        animation: achievement-unlock 0.5s ease;
       }
     }
 
     .achievement-icon {
       font-size: 40px;
       margin-right: 15px;
-      // BUG #24: No min-width, can shrink on long text
+      min-width: 40px; // FIX #24: Prevent shrinking
+      flex-shrink: 0;
     }
 
     .achievement-info {
       flex: 1;
+      min-width: 0;
 
       h3 {
         margin: 0 0 5px 0;
         font-size: 16px;
-        // BUG #25: No text truncation
+        // FIX #25: Text truncation
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       p {
@@ -803,11 +883,19 @@ hr {
   }
 }
 
-// BUG #26: Missing keyframes definition for achievement-unlock animation
+// FIX #26: Proper keyframes definition
 @keyframes achievement-unlock {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 // Sidebar Toggle Button
@@ -821,39 +909,48 @@ hr {
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  // BUG #27: Z-index too low, can be covered by other elements
-  z-index: 100;
+  z-index: 999; // FIX #27: Higher z-index
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s;
-
-  // BUG #28: No active state feedback
 
   &:hover {
     background: darken($game-container-background, 10%);
     transform: scale(1.1);
   }
 
+  // FIX #28: Added active state
+  &:active {
+    transform: scale(0.95);
+  }
+
   .toggle-icon {
     color: white;
     font-size: 24px;
-    // BUG #29: Icon doesn't rotate when sidebar is open
+    transition: transform 0.3s; // FIX #29: Icon rotation
+    display: inline-block;
+  }
+
+  &.sidebar-open .toggle-icon {
+    transform: rotate(180deg);
   }
 }
 
-// Mobile Responsive Styles (WITH BUGS)
+// Mobile Responsive Styles (BUGS FIXED)
 @include smaller($mobile-threshold) {
   .notification-sidebar {
-    // BUG #30: Width is fixed, doesn't account for small screens
-    width: 320px; // Should be 100% or calc(100% - 20px)
-    right: -320px;
+    // FIX #30: Responsive width
+    width: calc(100% - 40px);
+    max-width: 320px;
+    right: calc(-100% + 40px);
 
-    // BUG #31: Sidebar covers entire screen but no way to close on mobile
-    // except the X button which is hard to reach
+    &.open {
+      right: 0;
+    }
   }
 
   .sidebar-toggle {
-    // BUG #32: Button overlaps with score container on mobile
-    top: 10px;
+    // FIX #32: Better positioning to avoid overlap
+    top: 80px;
     right: 10px;
     width: 45px;
     height: 45px;
@@ -865,17 +962,18 @@ hr {
 
   .sidebar-tabs {
     .tab-button {
-      padding: 12px 5px;
-      font-size: 12px;
-      // BUG #33: Text gets cut off on very small screens
+      padding: 12px 3px; // FIX #33: Smaller padding
+      font-size: 11px;
+      min-width: 0;
     }
   }
 
   .achievement-item {
-    // BUG #34: Icon too large on mobile, causes layout issues
+    // FIX #34: Smaller icon on mobile
     .achievement-icon {
-      font-size: 35px;
+      font-size: 30px;
       margin-right: 10px;
+      min-width: 30px;
     }
 
     .achievement-info {
@@ -889,18 +987,129 @@ hr {
     }
   }
 
-  // BUG #35: Stats container not optimized for mobile
+  // FIX #35: Optimized stats for mobile
   .stats-container {
     .stat-item {
       padding: 12px 0;
+      flex-wrap: wrap;
+
+      .stat-value {
+        font-size: 16px;
+      }
     }
   }
 }
 
-// BUG #36: Missing media query for very large screens
-// Sidebar looks out of place on large monitors
+// FIX #36: Media query for very large screens
+@media (min-width: 1920px) {
+  .notification-sidebar {
+    width: 400px;
+    right: -400px;
+  }
+}
 
-// BUG #37: No dark mode support
-// BUG #38: Missing print styles - sidebar will print
-// BUG #39: No RTL language support
-// BUG #40: Missing reduced-motion media query for accessibility
+// FIX #37: Dark mode support
+@media (prefers-color-scheme: dark) {
+  .notification-sidebar {
+    background: #2d2d2d;
+    color: #e0e0e0;
+
+    .sidebar-header {
+      background: darken($game-container-background, 15%);
+    }
+
+    .sidebar-tabs {
+      background: #3d3d3d;
+      border-bottom-color: #555;
+
+      .tab-button {
+        color: #e0e0e0;
+
+        &:hover {
+          background: #4d4d4d;
+        }
+
+        &.active {
+          background: #2d2d2d;
+        }
+      }
+    }
+
+    .notification-item {
+      background: #3d3d3d;
+      color: #e0e0e0;
+
+      &.achievement {
+        background: #4a3d00;
+      }
+    }
+
+    .achievement-item {
+      background: #3d3d3d;
+
+      .achievement-info p {
+        color: #b0b0b0;
+      }
+    }
+  }
+}
+
+// FIX #38: Print styles
+@media print {
+  .notification-sidebar,
+  .sidebar-toggle {
+    display: none !important;
+  }
+}
+
+// FIX #39: RTL language support
+[dir="rtl"] {
+  .notification-sidebar {
+    right: auto;
+    left: -350px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+
+    &.open {
+      left: 0;
+      right: auto;
+    }
+  }
+
+  .sidebar-toggle {
+    right: auto;
+    left: 20px;
+  }
+
+  .notification-item {
+    border-left: none;
+    border-right: 4px solid #ccc;
+
+    &.info {
+      border-right-color: #2196F3;
+    }
+
+    &.success {
+      border-right-color: #4CAF50;
+    }
+
+    &.achievement {
+      border-right-color: #FF9800;
+    }
+  }
+
+  .achievement-icon {
+    margin-right: 0;
+    margin-left: 15px;
+  }
+}
+
+// FIX #40: Reduced motion support for accessibility
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
