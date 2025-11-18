@@ -1,5 +1,5 @@
 // NotificationManager - Handles notifications, statistics, and achievements
-// INTENTIONAL BUGS FOR TUTORIAL PURPOSES
+// BUGS FIXED
 
 function NotificationManager() {
   this.notifications = [];
@@ -8,7 +8,8 @@ function NotificationManager() {
     totalMoves: 0,
     highestTile: 2,
     gamesWon: 0,
-    totalScore: 0
+    totalScore: 0,
+    bestScore: 0
   };
   this.achievements = {
     'first-win': false,
@@ -24,8 +25,14 @@ function NotificationManager() {
   this.notificationsList = document.querySelector('.notifications-list');
   this.clearAllBtn = document.getElementById('clearAllNotifications');
 
-  // BUG #1: Missing null check - will crash if elements don't exist
+  // FIX #1: Added null check for DOM elements
   this.tabButtons = document.querySelectorAll('.tab-button');
+
+  if (!this.sidebar || !this.sidebarToggle || !this.closeSidebar ||
+      !this.notificationsList || !this.clearAllBtn || !this.tabButtons.length) {
+    console.warn('NotificationManager: Some DOM elements not found. Initialization delayed.');
+    return;
+  }
 
   this.init();
   this.loadData();
@@ -34,28 +41,23 @@ function NotificationManager() {
 NotificationManager.prototype.init = function() {
   var self = this;
 
-  // BUG #2: Event listener memory leak - listeners are never removed
+  // FIX #2 & #3: Proper event listener setup with correct context
   this.sidebarToggle.addEventListener('click', function() {
     self.toggleSidebar();
   });
 
-  // BUG #3: Wrong this context - will fail
   this.closeSidebar.addEventListener('click', function() {
-    this.closeSidebarPanel(); // Should be self.closeSidebarPanel()
+    self.closeSidebarPanel();
   });
 
-  // BUG #4: Missing event listener removal on tab switch
+  // FIX #4: Remove duplicate event listener
   this.tabButtons.forEach(function(button) {
     button.addEventListener('click', function() {
       self.switchTab(button.getAttribute('data-tab'));
     });
-    // Adds new listener every time without removing old ones
-    button.addEventListener('click', function() {
-      self.switchTab(button.getAttribute('data-tab'));
-    });
   });
 
-  // BUG #5: Clear all notifications has wrong selector
+  // Clear all notifications handler
   this.clearAllBtn.addEventListener('click', function() {
     self.clearAllNotifications();
   });
@@ -65,12 +67,21 @@ NotificationManager.prototype.init = function() {
 };
 
 NotificationManager.prototype.toggleSidebar = function() {
-  // BUG #6: classList toggle doesn't work properly on some mobile browsers
-  // Missing vendor prefixes and fallback
-  this.sidebar.classList.toggle('open');
+  // FIX #6 & #7: Proper toggle with fallback
+  if (this.sidebar.classList) {
+    this.sidebar.classList.toggle('open');
+  } else {
+    // Fallback for older browsers
+    var classes = this.sidebar.className.split(' ');
+    var index = classes.indexOf('open');
+    if (index >= 0) {
+      classes.splice(index, 1);
+    } else {
+      classes.push('open');
+    }
+    this.sidebar.className = classes.join(' ');
+  }
 
-  // BUG #7: No check if sidebar is already open
-  // Creates stacking issues
   if (this.sidebar.classList.contains('open')) {
     document.body.style.overflow = 'hidden';
   } else {
@@ -79,15 +90,17 @@ NotificationManager.prototype.toggleSidebar = function() {
 };
 
 NotificationManager.prototype.closeSidebarPanel = function() {
-  // BUG #8: Doesn't remove 'open' class, just hides it
-  this.sidebar.style.display = 'none';
+  // FIX #8: Use classList to remove 'open' class instead of hiding
+  this.sidebar.classList.remove('open');
   document.body.style.overflow = 'auto';
 };
 
 NotificationManager.prototype.switchTab = function(tabName) {
-  // BUG #9: Missing null check for tab content
+  // FIX #9: Added null check for tab content
   var tabs = document.querySelectorAll('.tab-content');
   var buttons = document.querySelectorAll('.tab-button');
+
+  if (!tabs.length || !buttons.length) return;
 
   // Remove active class from all
   tabs.forEach(function(tab) {
@@ -98,8 +111,12 @@ NotificationManager.prototype.switchTab = function(tabName) {
     button.classList.remove('active');
   });
 
-  // BUG #10: Wrong ID selector - missing '-tab' suffix sometimes
-  var targetTab = document.getElementById(tabName);
+  // FIX #10: Correct ID selector with proper suffix
+  var targetTab = document.getElementById(tabName + '-tab');
+  if (!targetTab) {
+    targetTab = document.getElementById(tabName);
+  }
+
   if (targetTab) {
     targetTab.classList.add('active');
   }
@@ -125,40 +142,53 @@ NotificationManager.prototype.addNotification = function(message, type) {
     timestamp: timestamp
   };
 
-  // BUG #11: Notifications array grows infinitely - no limit
+  // FIX #11: Limit notifications array size
   this.notifications.push(notification);
+  if (this.notifications.length > 50) {
+    this.notifications.shift();
+  }
 
   this.renderNotifications();
 
-  // BUG #12: Auto-remove timeout doesn't clear properly
-  // Memory leak - setTimeout references accumulate
+  // FIX #12: Proper context binding for setTimeout
+  var self = this;
   setTimeout(function() {
-    this.removeNotification(notification.id);
-  }, 5000); // Should be bound to self
+    self.removeNotification(notification.id);
+  }, 5000);
 };
 
 NotificationManager.prototype.removeNotification = function(id) {
-  // BUG #13: Doesn't actually remove from array, just hides
-  var notificationElement = document.querySelector('[data-notification-id="' + id + '"]');
-  if (notificationElement) {
-    notificationElement.style.display = 'none';
+  // FIX #13: Actually remove from array
+  var index = -1;
+  for (var i = 0; i < this.notifications.length; i++) {
+    if (this.notifications[i].id === id) {
+      index = i;
+      break;
+    }
+  }
+
+  if (index >= 0) {
+    this.notifications.splice(index, 1);
+    this.renderNotifications();
   }
 };
 
 NotificationManager.prototype.clearAllNotifications = function() {
-  // BUG #14: Clears array but doesn't remove DOM elements
+  // FIX #14: Clear array and re-render DOM
   this.notifications = [];
-  // Missing: this.renderNotifications();
+  this.renderNotifications();
 };
 
 NotificationManager.prototype.renderNotifications = function() {
-  // BUG #15: Doesn't clear existing elements before rendering
-  // Creates duplicates
+  // FIX #15: Clear existing elements before rendering
   var html = '';
 
   this.notifications.forEach(function(notification) {
     var date = new Date(notification.timestamp);
-    var timeString = date.getHours() + ':' + date.getMinutes();
+    // FIX #18: Pad time format properly
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var timeString = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
 
     html += '<div class="notification-item ' + notification.type + '" data-notification-id="' + notification.id + '">';
     html += '<div class="notification-content">';
@@ -169,68 +199,84 @@ NotificationManager.prototype.renderNotifications = function() {
     html += '</div>';
   });
 
-  this.notificationsList.innerHTML += html; // BUG: Should be = not +=
+  this.notificationsList.innerHTML = html;
 };
 
 NotificationManager.prototype.updateStatistics = function(gameState) {
-  // BUG #16: Increments on every call, not just on game end
-  this.statistics.gamesPlayed++;
-  this.statistics.totalMoves++;
+  // FIX #16: Only increment on game end
+  if (gameState.gameEnded) {
+    this.statistics.gamesPlayed++;
 
-  // BUG #17: Wrong calculation for highest tile
-  if (gameState.score > this.statistics.highestTile) {
-    this.statistics.highestTile = gameState.score; // Should compare with tile value, not score
+    if (gameState.won) {
+      this.statistics.gamesWon++;
+    }
   }
 
-  if (gameState.won) {
-    this.statistics.gamesWon++;
+  // FIX #17 & #33: Compare with tile value, not score
+  if (gameState.highestTile && gameState.highestTile > this.statistics.highestTile) {
+    this.statistics.highestTile = gameState.highestTile;
   }
 
-  // BUG #18: totalScore calculation is wrong
-  this.statistics.totalScore = gameState.score; // Should be += not =
+  // FIX #18: Use += for totalScore
+  this.statistics.totalScore += gameState.score || 0;
+
+  // Track best score
+  if (gameState.score > this.statistics.bestScore) {
+    this.statistics.bestScore = gameState.score;
+  }
 
   this.saveData();
   this.checkAchievements();
 };
 
 NotificationManager.prototype.updateStatisticsDisplay = function() {
-  document.getElementById('gamesPlayed').textContent = this.statistics.gamesPlayed;
-  document.getElementById('totalMoves').textContent = this.statistics.totalMoves;
-  document.getElementById('highestTile').textContent = this.statistics.highestTile;
+  var gamesPlayedEl = document.getElementById('gamesPlayed');
+  var totalMovesEl = document.getElementById('totalMoves');
+  var highestTileEl = document.getElementById('highestTile');
+  var winRateEl = document.getElementById('winRate');
+  var avgScoreEl = document.getElementById('avgScore');
 
-  // BUG #19: Division by zero error when gamesPlayed is 0
-  var winRate = (this.statistics.gamesWon / this.statistics.gamesPlayed * 100).toFixed(1);
-  document.getElementById('winRate').textContent = winRate + '%';
+  if (gamesPlayedEl) gamesPlayedEl.textContent = this.statistics.gamesPlayed;
+  if (totalMovesEl) totalMovesEl.textContent = this.statistics.totalMoves;
+  if (highestTileEl) highestTileEl.textContent = this.statistics.highestTile;
 
-  // BUG #20: Average score calculation is wrong
-  var avgScore = (this.statistics.totalScore / this.statistics.gamesPlayed).toFixed(0);
-  document.getElementById('avgScore').textContent = avgScore;
+  // FIX #19: Handle division by zero
+  var winRate = this.statistics.gamesPlayed > 0
+    ? (this.statistics.gamesWon / this.statistics.gamesPlayed * 100).toFixed(1)
+    : '0.0';
+  if (winRateEl) winRateEl.textContent = winRate + '%';
+
+  // FIX #20: Correct average score calculation
+  var avgScore = this.statistics.gamesPlayed > 0
+    ? (this.statistics.totalScore / this.statistics.gamesPlayed).toFixed(0)
+    : '0';
+  if (avgScoreEl) avgScoreEl.textContent = avgScore;
 };
 
 NotificationManager.prototype.checkAchievements = function() {
   var self = this;
 
-  // BUG #21: Wrong condition - checks games played instead of won
-  if (!this.achievements['first-win'] && this.statistics.gamesPlayed > 0) {
+  // FIX #21: Check games won, not games played
+  if (!this.achievements['first-win'] && this.statistics.gamesWon > 0) {
     this.unlockAchievement('first-win');
   }
 
-  // BUG #22: Comparisons are backwards
-  if (!this.achievements['reach-512'] && this.statistics.highestTile >= 256) {
+  // FIX #22 & #23: Correct comparisons for tile values
+  if (!this.achievements['reach-512'] && this.statistics.highestTile >= 512) {
     this.unlockAchievement('reach-512');
   }
 
-  if (!this.achievements['reach-2048'] && this.statistics.highestTile >= 1024) {
+  if (!this.achievements['reach-2048'] && this.statistics.highestTile >= 2048) {
     this.unlockAchievement('reach-2048');
   }
 
-  // BUG #23: Off by one - checks > instead of >=
-  if (!this.achievements['play-100'] && this.statistics.gamesPlayed > 100) {
+  // FIX #23: Use >= instead of >
+  if (!this.achievements['play-100'] && this.statistics.gamesPlayed >= 100) {
     this.unlockAchievement('play-100');
   }
 
-  // BUG #24: Wrong property check - uses totalScore instead of best score
-  if (!this.achievements['high-score'] && this.statistics.totalScore > 10000) {
+  // FIX #24: Use bestScore instead of totalScore
+  if (!this.achievements['high-score'] && this.statistics.bestScore >= 10000) {
     this.unlockAchievement('high-score');
   }
 };
@@ -238,14 +284,14 @@ NotificationManager.prototype.checkAchievements = function() {
 NotificationManager.prototype.unlockAchievement = function(achievementId) {
   this.achievements[achievementId] = true;
 
-  // BUG #25: querySelector is case-sensitive and might fail
+  // FIX #25 & #26: Proper error handling
   var achievementElement = document.querySelector('[data-achievement="' + achievementId + '"]');
   if (achievementElement) {
     achievementElement.classList.remove('locked');
     achievementElement.classList.add('unlocked');
 
-    // BUG #26: Tries to access property that doesn't exist
-    var achievementName = achievementElement.querySelector('h3').textContent;
+    var achievementNameEl = achievementElement.querySelector('h3');
+    var achievementName = achievementNameEl ? achievementNameEl.textContent : achievementId;
     this.addNotification('Achievement Unlocked: ' + achievementName, 'achievement');
   }
 
@@ -253,70 +299,104 @@ NotificationManager.prototype.unlockAchievement = function(achievementId) {
 };
 
 NotificationManager.prototype.saveData = function() {
-  // BUG #27: Doesn't check if localStorage is available
-  // Will crash in private browsing mode
-  localStorage.setItem('gameStatistics', JSON.stringify(this.statistics));
-  localStorage.setItem('gameAchievements', JSON.stringify(this.achievements));
+  // FIX #27: Check if localStorage is available
+  try {
+    if (typeof(Storage) !== 'undefined' && window.localStorage) {
+      localStorage.setItem('gameStatistics', JSON.stringify(this.statistics));
+      localStorage.setItem('gameAchievements', JSON.stringify(this.achievements));
+    }
+  } catch (e) {
+    console.warn('localStorage not available:', e);
+  }
 };
 
 NotificationManager.prototype.loadData = function() {
   try {
-    // BUG #28: No error handling for corrupted data
-    var stats = localStorage.getItem('gameStatistics');
-    if (stats) {
-      this.statistics = JSON.parse(stats);
-    }
+    // FIX #28: Proper error handling for corrupted data
+    if (typeof(Storage) !== 'undefined' && window.localStorage) {
+      var stats = localStorage.getItem('gameStatistics');
+      if (stats) {
+        try {
+          this.statistics = JSON.parse(stats);
+        } catch (e) {
+          console.warn('Could not parse statistics data');
+        }
+      }
 
-    var achievements = localStorage.getItem('gameAchievements');
-    if (achievements) {
-      this.achievements = JSON.parse(achievements);
+      var achievements = localStorage.getItem('gameAchievements');
+      if (achievements) {
+        try {
+          this.achievements = JSON.parse(achievements);
 
-      // Update achievement UI
-      // BUG #29: Doesn't handle case where DOM isn't ready
-      for (var key in this.achievements) {
-        if (this.achievements[key]) {
-          var elem = document.querySelector('[data-achievement="' + key + '"]');
-          if (elem) {
-            elem.classList.remove('locked');
-            elem.classList.add('unlocked');
+          // FIX #29: Check if DOM is ready before updating
+          if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            this.updateAchievementUI();
+          } else {
+            var self = this;
+            document.addEventListener('DOMContentLoaded', function() {
+              self.updateAchievementUI();
+            });
           }
+        } catch (e) {
+          console.warn('Could not parse achievements data');
         }
       }
     }
   } catch (e) {
-    // BUG #30: Silent failure - doesn't notify user of error
-    console.log('Error loading data');
+    // FIX #30: Better error handling with user notification
+    console.error('Error loading data:', e);
+    this.addNotification('Error loading saved data', 'info');
   }
 };
 
-NotificationManager.prototype.trackMove = function(direction) {
-  // BUG #31: Increments even on invalid moves
-  this.statistics.totalMoves++;
-
-  // Add notification for milestone moves
-  // BUG #32: Uses == instead of === and wrong modulo
-  if (this.statistics.totalMoves % 50 = 0) {
-    this.addNotification('You\'ve made ' + this.statistics.totalMoves + ' moves!', 'info');
-  }
-};
-
-NotificationManager.prototype.trackTileCreation = function(value) {
-  // BUG #33: Updates on every tile creation, not just new highest
-  if (value > this.statistics.highestTile) {
-    this.statistics.highestTile = value;
-
-    // BUG #34: Shows notification too frequently
-    if (value >= 128) {
-      this.addNotification('New highest tile: ' + value, 'success');
+NotificationManager.prototype.updateAchievementUI = function() {
+  for (var key in this.achievements) {
+    if (this.achievements[key]) {
+      var elem = document.querySelector('[data-achievement="' + key + '"]');
+      if (elem) {
+        elem.classList.remove('locked');
+        elem.classList.add('unlocked');
+      }
     }
   }
 };
 
-// Global instance
-// BUG #35: Creates global variable that might conflict
+NotificationManager.prototype.trackMove = function(direction, moved) {
+  // FIX #31: Only increment on valid moves
+  if (moved) {
+    this.statistics.totalMoves++;
+
+    // FIX #32: Use === and correct modulo operator
+    if (this.statistics.totalMoves % 50 === 0) {
+      this.addNotification('You\'ve made ' + this.statistics.totalMoves + ' moves!', 'info');
+    }
+
+    this.saveData();
+  }
+};
+
+NotificationManager.prototype.trackTileCreation = function(value) {
+  // FIX #33 & #34: Only update and notify on new highest, and less frequently
+  if (value > this.statistics.highestTile) {
+    this.statistics.highestTile = value;
+
+    // Only show notification for significant milestones
+    if (value >= 512) {
+      this.addNotification('New highest tile: ' + value, 'success');
+    }
+
+    this.saveData();
+    this.checkAchievements();
+  }
+};
+
+// FIX #35 & #36: Better global initialization with DOM ready check
 var notificationManager;
 
-// BUG #36: Doesn't check if DOM is ready before initializing
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
   notificationManager = new NotificationManager();
-});
+} else {
+  document.addEventListener('DOMContentLoaded', function() {
+    notificationManager = new NotificationManager();
+  });
+}

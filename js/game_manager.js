@@ -20,14 +20,9 @@ GameManager.prototype.restart = function () {
   this.actuator.continueGame(); // Clear the game won/lost message
   this.setup();
 
-  // BUG: notificationManager might not exist yet
+  // FIX: Check if notificationManager exists and only notify, don't update stats
   if (window.notificationManager) {
     window.notificationManager.addNotification('Game restarted!', 'info');
-    // BUG: updateStatistics should only be called on game end, not restart
-    window.notificationManager.updateStatistics({
-      score: this.score,
-      won: false
-    });
   }
 };
 
@@ -79,8 +74,8 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    // BUG: Probability is wrong - should be 0.9 for 2, not 0.1
-    var value = Math.random() < 0.1 ? 2 : 4;
+    // FIX: Correct probability - 90% for 2, 10% for 4
+    var value = Math.random() < 0.9 ? 2 : 4;
     var tile = new Tile(this.grid.randomAvailableCell(), value);
 
     this.grid.insertTile(tile);
@@ -178,11 +173,10 @@ GameManager.prototype.move = function (direction) {
           // Update the score
           self.score += merged.value / 2;
 
-          // BUG: Wrong tile value check - should be 2048, not 1024
-          if (merged.value === 1024) self.won = true;
+          // FIX: Correct win condition - should be 2048
+          if (merged.value === 2048) self.won = true;
 
           // Track tile creation for notifications
-          // BUG: Called too frequently, causes notification spam
           if (window.notificationManager) {
             window.notificationManager.trackTileCreation(merged.value);
           }
@@ -203,29 +197,33 @@ GameManager.prototype.move = function (direction) {
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
 
-      // BUG: notificationManager might not be defined
+      // FIX: Proper game over handling
       if (window.notificationManager) {
         window.notificationManager.addNotification('Game Over! Final score: ' + this.score, 'info');
         window.notificationManager.updateStatistics({
           score: this.score,
-          won: false
+          won: false,
+          gameEnded: true,
+          highestTile: this.getHighestTileValue()
         });
       }
     }
 
-    // BUG: Notification shown every move, not just when won
-    if (this.won && window.notificationManager) {
-      window.notificationManager.addNotification('You won! You reached 1024!', 'success');
+    // FIX: Only show win notification once
+    if (this.won && !this.keepPlaying && window.notificationManager) {
+      window.notificationManager.addNotification('You won! You reached 2048!', 'success');
       window.notificationManager.updateStatistics({
         score: this.score,
-        won: true
+        won: true,
+        gameEnded: true,
+        highestTile: this.getHighestTileValue()
       });
+      this.keepPlaying = true; // Prevent repeated notifications
     }
 
     // Track move
-    // BUG: Direction parameter not passed correctly
     if (window.notificationManager) {
-      window.notificationManager.trackMove(direction);
+      window.notificationManager.trackMove(direction, moved);
     }
 
     this.actuate();
@@ -311,4 +309,18 @@ GameManager.prototype.tileMatchesAvailable = function () {
 
 GameManager.prototype.positionsEqual = function (first, second) {
   return first.x === second.x && first.y === second.y;
+};
+
+// Get the highest tile value on the board
+GameManager.prototype.getHighestTileValue = function () {
+  var highest = 2;
+  var self = this;
+
+  this.grid.eachCell(function (x, y, tile) {
+    if (tile && tile.value > highest) {
+      highest = tile.value;
+    }
+  });
+
+  return highest;
 };
